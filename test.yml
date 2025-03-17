@@ -1,7 +1,0 @@
-channels:
-  - conda-forge
-  - nodefaults
-
-dependencies:
-  - boa
-  - numpy
