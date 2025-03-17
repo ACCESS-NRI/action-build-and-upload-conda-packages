@@ -86,7 +86,7 @@ jobs:
         id: test-action
         uses: jenseng/dynamic-uses@v1 # Need this because github context is not supported within step.uses (https://github.com/actions/runner/issues/895)
         with: 
-          uses: uibcdf/action-build-and-upload-conda-packages@${{github.sha}}
+          uses: ${{ github.repository }}@${{github.sha}}
           with: >-
             {
               ${{ env.COMMON_INPUTS }},
