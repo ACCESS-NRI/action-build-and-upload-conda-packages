@@ -7,8 +7,6 @@ on:
     branches: main
   workflow_dispatch:
   workflow_call:
-env:
-  CONDA_PKGS_DIRS: ~/conda_pkgs_dir
 defaults:
   run:
     shell: bash -l {0}
@@ -25,7 +23,6 @@ jobs:
         with:
           environment-file: ci/environment.yml
           cache-environment-key: environment-${{ hashFiles('ci/environment.yml') }}
-          cache-downloads-key: downloads-${{ hashFiles('ci/environment.yml') }}
 
   test-action:
     name: Test ${{ matrix.id }}
@@ -88,7 +85,6 @@ jobs:
         with:
           environment-file: ci/environment.yml
           cache-environment-key: environment-${{ hashFiles('ci/environment.yml') }}
-          cache-downloads-key: downloads-${{ hashFiles('ci/environment.yml') }}
 
       - name: ${{ matrix.label }}
         id: test-action
