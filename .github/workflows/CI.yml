@@ -25,11 +25,6 @@ jobs:
           environment-file: ci/environment.yml
           cache-environment-key: environment-${{ hashFiles('ci/environment.yml') }}
           cache-downloads-key: downloads-${{ hashFiles('ci/environment.yml') }}
-    
-      - name: Test
-        run: | 
-          conda-build --version
-          conda build --help
 
   test-action:
     runs-on: ubuntu-latest
