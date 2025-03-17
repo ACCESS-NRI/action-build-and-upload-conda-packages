@@ -21,14 +21,14 @@ jobs:
       - name: Version sanity check
         run: |
           # Don't allow smaller new versions or jumping versions in the MAJOR.MINOR.PATCH format
-          old_tag_name=$(git tag --list --sort=-taggerdate | sed -n '2p')
+          old_tag_name=$(git tag --list --sort=-version:refname | sed -n '2p')
           if [ -z "$old_tag_name" ]; then
             echo "No previous version found. Skipping version sanity check."
             exit 0
           fi
           new_tag_name='${{ github.ref_name }}'
-          read -r old_major old_minor old_patch <<< $(echo $old_tag_name | tr '.' ' ')
-          read -r new_major new_minor new_patch <<< $(echo $new_tag_name | tr '.' ' ')
+          read -r old_major old_minor old_patch <<< $(echo ${old_tag_name#v} | tr '.' ' ')
+          read -r new_major new_minor new_patch <<< $(echo ${new_tag_name#v} | tr '.' ' ')
           error_msg="Version tag inconsistent!\nVersion '$new_tag_name' cannot come after version '$new_tag_name' (latest released version)."
           # Check MAJOR
           # - New major version cannot be smaller than previous 
@@ -67,8 +67,23 @@ jobs:
           generate_release_notes: true
           make_latest: true
     
-      - name: Delete tag on failure
-        if: failure()
+
+  cleanup-tag-on-failure:
+    name: Cleanup tag
+    needs: [create-release]
+    # Run this job if the needed job didn't return with success (failed or skipped)
+    if: ${{ needs.create-release.result != 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - name: Delete tag
         run: |
-          git push origin --delete ${{ github.ref_name }}
-          echo "The current workflow had an error. Tag '${{ github.ref_name }}' was deleted."
+          git push origin :${{ github.ref_name }}
+          echo "A job in the current workflow failed. Tag '${{ github.ref_name }}' was deleted."
+        
