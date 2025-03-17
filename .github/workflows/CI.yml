@@ -27,10 +27,11 @@ jobs:
           cache-downloads-key: downloads-${{ hashFiles('ci/environment.yml') }}
 
   test-action:
+    name: Test ${{ matrix.id }}
     runs-on: ubuntu-latest
     needs: setup-conda-build
     concurrency:
-      group: branch-${{ github.ref }} # Cancel past jobs coming from the same branch
+      group: branch-${{ github.ref }}- # Cancel past jobs coming from the same branch
       cancel-in-progress: true
     env:
       COMMON_INPUTS: >-
@@ -39,7 +40,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - label: "Test: All platforms conversion, '.conda' package format."
+          - id: 1
+            label: "Test: Conversion to all platforms, 'conda_build_args' argument, '.conda' package format."
             inputs: >-
                 "platform_all": true,
                 "conda_build_args": --package-format .conda
@@ -57,7 +59,8 @@ jobs:
               win-32/asyncio-3.4.1-py311_0.conda
               win-64/asyncio-3.4.1-py311_0.conda
               win-arm64/asyncio-3.4.1-py311_0.conda
-          - label: "Test: Specific platforms conversion, conda_convert_args, '.tar.bz2' package format."
+          - id: 2
+            label: "Test: Conversion to specific platforms, 'conda_convert_args' argument, '.tar.bz2' package format."
             inputs: >-
                 "platform_win-32": true,
                 "platform_win-64": true,
@@ -69,7 +72,8 @@ jobs:
               osx-64/asyncio-3.4.1-py311_0.tar.bz2
               win-32/asyncio-3.4.1-py311_0.tar.bz2
               win-64/asyncio-3.4.1-py311_0.tar.bz2
-          - label: "Test: Remove host platform, anaconda_upload_args."
+          - id: 3
+            label: "Test: 'platform_host: false', 'anaconda_upload_args' argument."
             inputs: >-
                 "platform_host": false,
                 "anaconda_upload_args": --label mylabel
