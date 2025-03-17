@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup-conda-build
     concurrency:
-      group: branch-${{ github.ref }}- # Cancel past jobs coming from the same branch
+      group: branch-${{ github.ref }}-${{ matrix.id }} # Cancel past jobs coming from the same branch
       cancel-in-progress: true
     env:
       COMMON_INPUTS: >-
