@@ -83,10 +83,12 @@ steps:
 ```
 
 ### Anaconda token
-
 In order to upload a package to your anaconda user or organization channel, you need to [create an Anaconda token](https://docs.anaconda.com/anacondaorg/user-guide/work-with-accounts/#generating-tokens).<br>
 
 #### Create an Anaconda token
+> [!TIP]
+> For ACCESS-NRI staff, follow the steps outlined in [dev-docs](https://github.com/ACCESS-NRI/dev-docs/wiki/Continuous-integration-and-Deployment#publishing-a-python-package-to-conda).
+
 There are two main ways to create an Anaconda token:
 - [Using the command line](#using-the-command-line)
 - [Through the Anaconda.org website](#through-the-anacondaorg-website)
