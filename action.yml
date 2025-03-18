@@ -8,10 +8,6 @@ inputs:
   meta_yaml_dir:
     description: Path to the directory in the repository where the meta.yaml file is located.
     required: true
-  mambabuild:
-    description: Using boa (mambabuild) to build the packages.
-    required: false
-    default: false
   platform_host:
     description: Target host plaform.
     required: false
@@ -177,12 +173,7 @@ runs:
         echo "::group::Building conda package for host platform"
         out_dir=`mktemp -d -t compilation-XXXXXXXXXX`
         echo "out_dir=$out_dir" >> $GITHUB_OUTPUT
-        if "${{ inputs.mambabuild }}"; then
-          build_function="mambabuild"
-        else
-          build_function="build"
-        fi
-        conda_build_command="conda $build_function . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
+        conda_build_command="conda build . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
         echo "$conda_build_command"
         eval "$conda_build_command"
         HOST_PACKAGE=$(eval "$conda_build_command --output")

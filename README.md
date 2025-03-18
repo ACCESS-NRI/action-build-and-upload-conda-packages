@@ -173,7 +173,6 @@ jobs:
 | ---------------- | ----------- | -------- | ------------- |
 | `meta_yaml_dir` | Path to the directory where the `meta.yaml` file is located. | Required | |
 | `upload` | Upload the built package to Anaconda. If set to `false`, the built package will not be uploaded to Anaconda.org. | Optional | `true` |
-| `mambabuild` | Uses [`conda mambabuild` command](https://boa-build.readthedocs.io/en/stable/mambabuild.html) to build the packages. Requires [`mamba` setup](https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-6-mamba). | Optional | `false` |
 | `user` | Name of the Anaconda.org channel where the package will be uploaded. | Optional | |
 | `token` | [Anaconda token](#anaconda-token) for the package uploading. | Optional |  |
 | `label` | Label of the uploaded package. | Optional | `main` |
@@ -197,7 +196,7 @@ jobs:
 
 ### Additional command line arguments
 This action, internally, calls the following commands:
-- [`conda build`][conda-build-command] (or `conda mambabuild`, if `mambabuild` is set to `true`)
+- [`conda build`][conda-build-command]
 - [`conda convert`][conda-convert-command] (if any platform conversion is specified)
 - [`anaconda upload`][anaconda-upload-command] (if `upload` is set to `true`)
 
