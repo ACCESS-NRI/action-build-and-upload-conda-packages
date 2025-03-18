@@ -84,6 +84,6 @@ jobs:
 
       - name: Delete tag
         run: |
-          git push origin :${{ github.ref_name }}
+          git push origin :${{ github.ref }}
           echo "A job in the current workflow failed. Tag '${{ github.ref_name }}' was deleted."
         
