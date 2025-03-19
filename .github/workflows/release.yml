@@ -72,7 +72,7 @@ jobs:
     name: Cleanup tag
     needs: [create-release]
     # Run this job if the needed job didn't return with success (failed or skipped)
-    if: ${{ needs.create-release.result != 'success' }}
+    if: ${{ needs.create-release.result != 'success' || cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
