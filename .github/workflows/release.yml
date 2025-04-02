@@ -34,7 +34,7 @@ jobs:
           # - New major version cannot be smaller than previous 
           # - Major version can only be incremented by 1 at a time
           if (( new_major < old_major || new_major > old_major + 1 )); then
-            echo -e "$msg"
+            echo -e "$error_msg"
             exit 1
           fi
           # Check MINOR
@@ -42,7 +42,7 @@ jobs:
           # - New minor version can only be 0 if major version is incremented
           # - New minor version can only be incremented by 1 at a time
           if (( (new_major == old_major && new_minor < old_minor) || (new_major > old_major && new_minor != 0) || (new_minor > old_minor + 1) )); then
-            echo -e "$msg"
+            echo -e "$error_msg"
             exit 1
           fi
           # Check PATCH
@@ -50,7 +50,7 @@ jobs:
           # - New patch version can only be 0 if minor version is incremented
           # - New patch version can only be incremented by 1 at a time
           if (( (new_minor == old_minor && new_patch <= old_patch) || (new_minor > old_minor && new_patch != 0) || (new_patch > old_patch + 1) )); then
-            echo -e "$msg"
+            echo -e "$error_msg"
             exit 1
           fi
 
