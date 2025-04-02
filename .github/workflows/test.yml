@@ -104,10 +104,11 @@ jobs:
           for path in ${{ env.OUTPUT_PATHS }}; do
             output_paths+=($(sed -E 's|.*/([^/]+/[^/]+)$|\1|g' <<< $path))
           done
-          # Sort output paths alphabetically, to make the comparison easier
+          # Sort output and expected paths alphabetically, to make the comparison easier
           output_paths=($(printf "%s\n" "${output_paths[@]}" | sort))
-          if [[ "${output_paths[@]}" != "${{ env.EXPECTED_OUTPUTS }}" ]]; then
-            echo "Wrong outputs. Outputs expected: [$(tr ' ' ', ' <<< '${{ env.EXPECTED_OUTPUTS }}')], outputs found: [$(tr ' ' ', ' <<< ${output_paths[@]})]."
+          expected_paths=($(printf "%s\n" '${{ env.EXPECTED_OUTPUTS }}' | sort))
+          if [[ "${output_paths[@]}" != "${expected_paths[@]}" ]]; then
+            echo "Wrong outputs. Outputs expected: [$(tr ' ' ', ' <<< ${expected_paths[@]})], outputs found: [$(tr ' ' ', ' <<< ${output_paths[@]})]."
             exit 1
           fi
 
