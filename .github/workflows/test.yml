@@ -89,7 +89,7 @@ jobs:
 
       - name: ${{ matrix.label }}
         id: test-action
-        uses: jenseng/dynamic-uses@v1 # Need this because github context is not supported within step.uses (https://github.com/actions/runner/issues/895)
+        uses: jenseng/dynamic-uses@5175289a9a87978dcfcb9cf512b821d23b2a53eb #v1 - Needed because github context is not supported within step.uses (https://github.com/actions/runner/issues/895)
         with: 
           uses: ${{ github.repository }}@${{github.sha}}
           with: >-
