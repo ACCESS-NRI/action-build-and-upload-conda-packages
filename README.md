@@ -594,7 +594,7 @@ jobs:
 <details id="force-upload-on-anaconda-org-example">
 <summary><b>Example 9: Force upload on Anaconda.org</b></summary>
 
-To force the conda package upload to Anaconda.org regardless of errors (within the `anaconda upload` command), we can pass the additional [`--force` command-line argument](https://docs.anaconda.com/anaconda-repository/commandreference/#upload:~:text=%2D%2Dforce%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20Force%20a%20package%20upload%20regardless%20of%20errors) as a `anaconda_upload_args`:
+To force the conda package upload to Anaconda.org regardless of errors (within the `anaconda upload` command), we can pass the additional `--force` command-line argument as a `anaconda_upload_args`:
 
 ```yaml
 name: Build and upload conda packages (force upload)
