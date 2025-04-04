@@ -277,7 +277,8 @@ runs:
           echo "No package conversion requested."
         fi
         if ! "${{ inputs.platform_host }}"; then
-          rm ${{ env.HOST_PACKAGE }}
+          rm '${{ env.HOST_PACKAGE }}'
+          rm '${{ env.HOST_PACKAGE_TRANSMUTED }}' &> /dev/null
           echo "Package for host platform removed."
         fi
         echo "::endgroup::"
