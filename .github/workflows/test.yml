@@ -81,6 +81,7 @@ jobs:
                 "conda_convert_args": --platform win-32 -p osx-arm64,
                 "conda_build_args": --package-format .tar.bz2
             expected_outputs: >-
+                linux-64/asyncio-3.4.1-py311_0.tar.bz2
                 osx-arm64/asyncio-3.4.1-py311_0.tar.bz2
                 win-32/asyncio-3.4.1-py311_0.tar.bz2
     steps:
