@@ -75,6 +75,14 @@ jobs:
                 "platform_host": false,
                 "anaconda_upload_args": --label mylabel
             expected_outputs: ""
+          - id: 4
+            label: "Test: 'platform_host: false', 'anaconda_upload_args' argument."
+            inputs: >-
+                "conda_convert_args": --platform win-32 -p osx-arm64,
+                "conda_build_args": --package-format .tar.bz2
+            expected_outputs: >-
+                osx-arm64/asyncio-3.4.1-py311_0.tar.bz2
+                win-32/asyncio-3.4.1-py311_0.tar.bz2
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
