@@ -288,13 +288,12 @@ runs:
       run: |
         echo "::group::Transmute packages back to '.conda' format"
         if [[ ${{ env.is_transmutation_required }} == true ]]; then
-          host_package_transmuted='${{ env.HOST_PACKAGE_TRANSMUTED }}'
           # find transmuted .tar.bz2 packages
-          transmuted_packages=$(find ${{ steps.compilation.outputs.out_dir }} -type f -name $(basename $host_package_transmuted))
+          transmuted_packages=$(find ${{ steps.compilation.outputs.out_dir }} -type f -name $(basename '${{ env.HOST_PACKAGE_TRANSMUTED }}'))
           for package_path in $transmuted_packages; do
             cph transmute $package_path .conda
           done
-          echo "Transmuted '$(basename $package_path)' packages back to '$(basename ${host_package_transmuted%.tar.bz2}).conda'."
+          echo "Transmuted '$(basename $package_path)' packages back to '$(basename '${{env.HOST_PACKAGE}}')'."
         else
           echo "No transmutation needed."
         fi
