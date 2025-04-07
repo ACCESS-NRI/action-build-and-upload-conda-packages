@@ -68,6 +68,10 @@ inputs:
     description: Upload built package to anaconda
     required: false
     default: true
+  verify:
+    description: Verify the recipe and package using conda-verify.
+    required: false
+    default: true
   user:
     description: Name of the Anaconda user or organization where the conda package will be published.
     required: false
@@ -86,6 +90,10 @@ inputs:
     default: ''
   conda_convert_args:
     description: Optional arguments to pass to the 'conda convert' command.
+    required: false
+    default: ''
+  conda_verify_args:
+    description: Optional arguments to pass to the 'conda verify' command.
     required: false
     default: ''
   anaconda_upload_args:
