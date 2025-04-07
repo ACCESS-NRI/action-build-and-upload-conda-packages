@@ -173,7 +173,7 @@ jobs:
 | `user` | Name of the Anaconda.org channel where the package will be uploaded. | Optional | |
 | `token` | [Anaconda token](#anaconda-token) for the package uploading. | Optional |  |
 | `label` | Label of the uploaded package. | Optional | `main` |
-| `platform_host` | Build packages for the host platform. | Optional | `true` |
+| `keep_host_platform` | Keep the packages built for the host platform. | Optional | `true` |
 | `platform_all` | Build packages for all supported platforms. | Optional | `false` |
 | `platform_linux-64` | Build packages for the `linux-64` platform. | Optional | `false` |
 | `platform_linux-32` | Build packages for the `linux-32` platform. | Optional | `false` |

@@ -8,8 +8,8 @@ inputs:
   meta_yaml_dir:
     description: Path to the directory in the repository where the meta.yaml file is located.
     required: true
-  platform_host:
-    description: Target host plaform.
+  keep_host_platform:
+    description: Keep the package built for the host platform.
     required: false
     default: true
   platform_all:
@@ -276,7 +276,7 @@ runs:
         else
           echo "No package conversion requested."
         fi
-        if ! "${{ inputs.platform_host }}"; then
+        if ! "${{ inputs.keep_host_platform }}"; then
           rm '${{ env.HOST_PACKAGE }}'
           rm '${{ env.HOST_PACKAGE_TRANSMUTED }}' &> /dev/null
           echo "Package for host platform removed."
