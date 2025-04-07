@@ -5,6 +5,7 @@
 [conda-build-command]: https://docs.conda.io/projects/conda-build/en/stable/resources/commands/conda-build.html
 [conda-convert-command]: https://docs.conda.io/projects/conda-build/en/stable/resources/commands/conda-convert.html
 [anaconda-upload-command]: https://docs.anaconda.com/anaconda-repository/commandreference/#upload
+[upstream]: https://github.com/uibcdf/action-build-and-upload-conda-packages
 
 # action-build-and-upload-conda-packages
 [![Open Source Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
@@ -30,6 +31,15 @@
   - [Additional command line arguments](#additional-command-line-arguments)
 - [Outputs](#outputs)
 - [Examples](#examples)
+  - [Example 1: Use git tag as the conda package version](#use-a-git-tag-as-the-conda-package-version-example)
+  - [Example 2: Build a pure Python package for different platforms](#build-a-pure-python-conda-package-for-different-platforms-example)
+  - [Example 3: Build a platform-specific package for different platforms](#build-a-platform-specific-conda-package-for-different-platforms-example)
+  - [Example 4: Pass additional command-line arguments](#pass-additional-command-line-arguments-example)
+  - [Example 5: Build a conda package for multiple Python versions](#build-a-conda-package-for-multiple-python-versions-example)
+  - [Example 6: Set the conda package label based on the release type](#set-the-conda-package-label-based-on-the-release-type-example)
+  - [Example 7: Create a GitHub release with the built conda packages as assets](#create-a-github-release-with-the-built-conda-packages-as-assets-example)
+  - [Example 8: Test correctness of a conda build](#test-correctness-of-a-conda-build-example)
+  - [Example 9: Force upload on Anaconda.org](#force-upload-on-anaconda-org-example)
 - [Acknowledgements](#acknowledgements)
 
 ## About
@@ -40,10 +50,6 @@ This GitHub Action automates the process of building, converting, and uploading 
 - Uploading: Publishes the final package versions to [Anaconda.org] for easy distribution.
 
 By integrating this action into your [CI/CD GitHub workflow][GitHub workflow], you can ensure that your _Conda_ packages are consistently built, transformed for multiple platforms, and made available to your users with minimal manual effort.
-
-This GitHub Action was originally developed by the [Computational Biology and Drug Design Research Unit (UIBCDF) at the
-Mexico City Children's Hospital Federico Gómez][UIBCDF]. For the complete list of contributors, refer to the [contributors section](https://github.com/uibcdf/action-build-and-upload-conda-packages/graphs/contributors).<br>
-Explore more GitHub Actions developed by UIBCDF at the [UIBCDF GitHub Organization page](https://github.com/search?q=topic%3Agithub-actions+org%3Auibcdf&type=Repositories).
 
 ## Requirements
 
@@ -74,10 +80,12 @@ steps:
 ```
 
 ### Anaconda token
-
 In order to upload a package to your anaconda user or organization channel, you need to [create an Anaconda token](https://docs.anaconda.com/anacondaorg/user-guide/work-with-accounts/#generating-tokens).<br>
 
 #### Create an Anaconda token
+> [!TIP]
+> For ACCESS-NRI staff, follow the steps outlined in [dev-docs](https://github.com/ACCESS-NRI/dev-docs/wiki/Continuous-integration-and-Deployment#publishing-a-python-package-to-conda).
+
 There are two main ways to create an Anaconda token:
 - [Using the command line](#using-the-command-line)
 - [Through the Anaconda.org website](#through-the-anacondaorg-website)
@@ -162,12 +170,10 @@ jobs:
 | ---------------- | ----------- | -------- | ------------- |
 | `meta_yaml_dir` | Path to the directory where the `meta.yaml` file is located. | Required | |
 | `upload` | Upload the built package to Anaconda. If set to `false`, the built package will not be uploaded to Anaconda.org. | Optional | `true` |
-| `overwrite` |  Do not abort the uploading if a package with the same name is already present in the Anaconda channel. | Optional | `false` |
-| `mambabuild` | Uses [`conda mambabuild` command](https://boa-build.readthedocs.io/en/stable/mambabuild.html) to build the packages. Requires [`mamba` setup](https://github.com/conda-incubator/setup-miniconda?tab=readme-ov-file#example-6-mamba). | Optional | `false` |
 | `user` | Name of the Anaconda.org channel where the package will be uploaded. | Optional | |
 | `token` | [Anaconda token](#anaconda-token) for the package uploading. | Optional |  |
 | `label` | Label of the uploaded package. | Optional | `main` |
-| `platform_host` | Build packages for the host platform. | Optional | `true` |
+| `keep_host_platform` | Keep the packages built for the host platform. | Optional | `true` |
 | `platform_all` | Build packages for all supported platforms. | Optional | `false` |
 | `platform_linux-64` | Build packages for the `linux-64` platform. | Optional | `false` |
 | `platform_linux-32` | Build packages for the `linux-32` platform. | Optional | `false` |
@@ -187,13 +193,13 @@ jobs:
 
 ### Additional command line arguments
 This action, internally, calls the following commands:
-- [`conda build`][conda-build-command] (or `conda mambabuild`, if `mambabuild` is set to `true`)
+- [`conda build`][conda-build-command]
 - [`conda convert`][conda-convert-command] (if any platform conversion is specified)
 - [`anaconda upload`][anaconda-upload-command] (if `upload` is set to `true`)
 
 The above commands have multiple command-line arguments that can be passed, for each of the respective command, by using the `conda_build_args`, `conda_convert_args` and `anaconda_upload_args` input parameters.
 
-Refer to the [Pass additional command-line arguments example](#pass-additional-command-line-arguments-example) for a practical case on the usage of these input parameters.
+Refer to the [Example 4: Pass additional command-line arguments](#pass-additional-command-line-arguments-example) for practical usage of these input parameters.
 
 > [!WARNING]
 > Some command line arguments in `conda_build_args`, `conda_convert_args` or `anaconda_upload_args` cannot be specified because they are either already handled internally by the action or conflict with specific input parameters:<br>
@@ -207,20 +213,19 @@ Refer to the [Pass additional command-line arguments example](#pass-additional-c
 > **`anaconda_upload_args`**
 > - `--label`/`-l` together with the `label` input parameter
 > - `--user`/`-u` together with the `user` input parameter
-> - `--force` together with the `overwrite` input parameter
 
 ## Outputs
 | Name | Description | 
 | --- | --- |
 | paths | Space-separated paths for the built packages, in the format `path1 path2 ... pathN`. |
 
-The output paths can be useful for later jobs, for example to [create a GitHub release with the built packages as artifacs](#create-a-gitHub-release-with-the-built-packages-as-artifacs-example).
+The output paths can be useful for later jobs, for example to [create a GitHub release with the built packages as assets](#create-a-github-release-with-the-built-packages-as-assets-example).
 
 ## Examples
 
 <!-- Example 1 -->
-<details id="build-and-upload-a-package-when-a-new-git-tag-is-pushed-and-use-the-git-tag-as-the-package-version-example">
-<summary><b>Build and upload a package when a new <i>Git</i> tag is pushed and use the <i>Git</i> tag as the package version</b></summary>
+<details id="use-a-git-tag-as-the-conda-package-version-example">
+<summary><b>Example 1: Use a <i>Git</i> tag as the conda package version</b></summary>
 
 The `meta.yaml` file defines the [package version field](https://docs.conda.io/projects/conda-build/en/stable/resources/define-metadata.html#package-version) to specify the version number of the built package.
 
@@ -275,7 +280,7 @@ Version numbers including the dash character `-` are [not supported by conda-bui
 
 <!-- Example 2 -->
 <details id="build-a-pure-python-conda-package-for-different-platforms-example">
-<summary><b>Build a <i>pure Python</i> conda package for different platforms</b></summary>
+<summary><b>Example 2: Build a <i>pure Python</i> conda package for different platforms</b></summary>
 
 When a package is built as pure Python library, `conda convert` can generate [packages for other platforms](https://docs.conda.io/projects/conda-build/en/latest/user-guide/tutorials/build-pkgs-skeleton.html?highlight=platform#optional-converting-conda-package-for-other-platforms).
 
@@ -319,7 +324,7 @@ jobs:
 
 <!-- Example 3 -->
 <details id="build-a-platform-specific-conda-package-for-different-platforms-example">
-<summary><b>Build a platform-specific conda package for different platforms</b></summary>
+<summary><b>Example 3: Build a platform-specific conda package for different platforms</b></summary>
 
 If a package requires platform-specific compilation instructions, `conda convert` is not a viable option.
 
@@ -368,9 +373,11 @@ In this case, your `meta.yaml` file will likely need [preprocessing selectors](h
 
 <!-- Example 4 -->
 <details id="pass-additional-command-line-arguments-example">
-<summary><b>Pass additional command-line arguments</b></summary>
+<summary><b>Example 4: Pass additional command-line arguments</b></summary>
 
-To build a package and limit the search for dependencies to specific Anaconda channels, the `--override-channels` and `--channel my_channel` options can be passed to the to the [conda build][conda-build-command] command.
+[Additional command-line arguments](#additional-command-line-arguments) can be passed to the `conda build`, `conda convert` and `anaconda upload` commands, internally called within this action. 
+
+For example, to build a package and limit the search for dependencies to specific Anaconda channels, the `--override-channels` and `--channel my_channel` options can be passed to the to the [conda build][conda-build-command] command.
 
 Additionally, to display _Python_ imports for the compiled components of the built package, the `--show-imports` option can be passed to the [conda convert][conda-convert-command] command.
 
@@ -413,8 +420,8 @@ jobs:
 </details>
 
 <!-- Example 5 -->
-<details id="build-a-package-for-multiple-python-versions-example">
-<summary><b>Build a package for multiple <i>Python</i> versions</b></summary>
+<details id="build-a-conda-package-for-multiple-python-versions-example">
+<summary><b>Example 5: Build a conda package for multiple <i>Python</i> versions</b></summary>
 
 The recommended approach for building packages across different _Python_ versions is to use [build variants](https://docs.conda.io/projects/conda-build/en/latest/resources/variants.html#build-variants).
 
@@ -449,8 +456,8 @@ In this case, no changes are needed in the workflow file for this action. A setu
 </details>
 
 <!-- Example 6 -->
-<details id="build-a-package-for-multiple-python-versions-example">
-<summary><b>Set the package label depending on the release type</b></summary>
+<details id="set-the-conda-package-label-based-on-the-release-type-example">
+<summary><b>Example 6: Set the conda package label based on the release type</b></summary>
 
 ```yaml
 name: Build and upload conda packages with label according to release type
@@ -494,8 +501,8 @@ jobs:
 </details>
 
 <!-- Example 7 -->
-<details id="create-a-gitHub-release-with-the-built-packages-as-artifacs-example">
-<summary><b>Create a GitHub release with the built packages as artifacs</b></summary>
+<details id="create-a-github-release-with-the-built-conda-packages-as-assets-example">
+<summary><b>Example 7: Create a GitHub release with the built conda packages as assets</b></summary>
 
 ```yaml
 name: Build and upload conda packages and create GitHub release with built packages as artifacts
@@ -544,8 +551,8 @@ jobs:
 </details>
 
 <!-- Example 8 -->
-<details id="test-correctness-of-a-conda-build">
-<summary><b>Test correctness of a <i>Conda</i> build</b></summary>
+<details id="test-correctness-of-a-conda-build-example">
+<summary><b>Example 8: Test correctness of a <i>Conda</i> build</b></summary>
 
 You can use this action in a [CI/CD workflow](https://github.com/resources/articles/devops/ci-cd) to test for errors during the conda build and conversion process, without uploading the package to Anaconda.org.
 
@@ -583,17 +590,47 @@ jobs:
 ```
 </details>
 
+<!-- Example 9 -->
+<details id="force-upload-on-anaconda-org-example">
+<summary><b>Example 9: Force upload on Anaconda.org</b></summary>
+
+To force the conda package upload to Anaconda.org regardless of errors (within the `anaconda upload` command), we can pass the additional `--force` command-line argument as a `anaconda_upload_args`:
+
+```yaml
+name: Build and upload conda packages (force upload)
+
+on:
+  push:
+    branches: main
+
+jobs:
+  conda_deployment:
+    name: Conda deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Conda environment creation and activation
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: 3.11
+          environment-file: path/to/conda/env.yaml    # Replace with the path to your conda environment
+          auto-update-conda: false
+          auto-activate-base: false
+          show-channel-urls: true
+      - name: Build and upload the conda packages
+        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        with:
+          meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
+          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
+          anaconda_upload_args: --force
+```
+
+</details>
+
+
 ## Acknowledgements
 
-This GitHub Action was initially developed to address a specific need of the [UIBCDF] and serve as an example of an in-house GitHub Action for its researchers and students.
-
-We extend our gratitude to the developers of the following related GitHub Actions, whose work provided valuable insights and guidance in setting up our own.
-
-https://github.com/fdiblen/anaconda-action
-https://github.com/MichaelsJP/conda-package-publish-action
-https://github.com/Jegp/conda-package-publish-action
-https://github.com/amauryval/publish_conda_package_action
-https://github.com/elbeejay/conda-publish-action
-https://github.com/maxibor/conda-package-publish-action
-https://github.com/m0nhawk/conda-package-publish-action
-https://github.com/fcakyon/conda-publish-action
+This GitHub Action was forked from [uibcdf/action-build-and-upload-conda-packages][upstream], originally developed by the [Computational Biology and Drug Design Research Unit (UIBCDF) at the
+Mexico City Children's Hospital Federico Gómez][UIBCDF].

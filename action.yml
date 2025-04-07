@@ -8,12 +8,8 @@ inputs:
   meta_yaml_dir:
     description: Path to the directory in the repository where the meta.yaml file is located.
     required: true
-  mambabuild:
-    description: Using boa (mambabuild) to build the packages.
-    required: false
-    default: false
-  platform_host:
-    description: Target host plaform.
+  keep_host_platform:
+    description: Keep the package built for the host platform.
     required: false
     default: true
   platform_all:
@@ -72,10 +68,6 @@ inputs:
     description: Upload built package to anaconda
     required: false
     default: true
-  overwrite:
-    description: Do not cancel the uploading if a package with the same name is found already in Anaconda.
-    required: false
-    default: ''
   user:
     description: Name of the Anaconda user or organization where the conda package will be published.
     required: false
@@ -103,7 +95,7 @@ inputs:
 outputs:
   paths:
     description: Paths for the built packages, in the format 'path1 path2 ... pathN'.
-    value: ${{steps.packages-uploading.outputs.paths}}
+    value: ${{steps.set-output-paths.outputs.paths}}
 
 runs:
   using: "composite"
@@ -153,11 +145,6 @@ runs:
                 "Please only use one of them."
             exit 1
         fi
-        if ${{ contains(inputs.anaconda_upload_args, '--force') }} && [ -n "${{ inputs.overwrite }}" ]; then
-            echo -e "Both the 'overwrite' input and the '--force' option within 'anaconda_upload_args' were specified.\n"\
-                "Please only use one of them."
-            exit 1
-        fi
         echo "::endgroup::"
     - name: Event trigger data
       shell: bash -l {0}
@@ -167,7 +154,6 @@ runs:
         echo "Associated commit SHA: $GITHUB_SHA"
         echo "::endgroup::"
     - name: Checking if meta.yaml is in meta_yaml_dir
-      id: checking-meta_yaml
       shell: bash -l {0}
       working-directory: ${{ inputs.meta_yaml_dir }}
       run: |
@@ -180,78 +166,149 @@ runs:
         fi
         echo "::endgroup::"
     - name: Packages compilation
-      id: packages-compilation
+      id: compilation
       shell: bash -l {0}
       working-directory: ${{ inputs.meta_yaml_dir }}
       run: |
         echo "::group::Building conda package for host platform"
         out_dir=`mktemp -d -t compilation-XXXXXXXXXX`
         echo "out_dir=$out_dir" >> $GITHUB_OUTPUT
-        if "${{ inputs.mambabuild }}"; then
-          build_function="mambabuild"
-        else
-          build_function="build"
-        fi
-        conda_build_command="conda $build_function . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
+        conda_build_command="conda build . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
         echo "$conda_build_command"
         eval "$conda_build_command"
         HOST_PACKAGE=$(eval "$conda_build_command --output")
-        echo "HOST_PACKAGE=$HOST_PACKAGE" >> $GITHUB_OUTPUT
+        [[ "$HOST_PACKAGE" == *.conda ]] && is_conda_format=true || is_conda_format=false
+        echo "HOST_PACKAGE=$HOST_PACKAGE" >> $GITHUB_ENV
+        echo "is_conda_format=$is_conda_format" >> $GITHUB_ENV
         echo "Package for host platform compiled as $HOST_PACKAGE"
         du -sh $HOST_PACKAGE
         echo "::endgroup::"
+    - name: Transmute .conda packages to .tar.bz2
+      id: transmutation
+      shell: bash -l {0}
+      run: |
+        # conda convert does not support .conda packages yet, therefore, we need to convert them 
+        # to .tar.bz2 first and then convert them back to .conda
+        # More info --> https://github.com/uibcdf/action-build-and-upload-conda-packages/issues/25
+        # Only perform transmutation if the package is a .conda package or conversion has been requested
+        echo "::group::Transmute .conda packages to .tar.bz2"
+        
+        # Check if a platform conversion is required and export a GitHub environment variable
+        any_platform_inputs=$(jq 'to_entries | map(select(.key | startswith("platform_")) | .value == "true") | any' <<< '${{ toJSON(inputs) }}')
+        [[ ${{ contains(inputs.conda_convert_args, '-p ') }} == true || \
+           ${{ contains(inputs.conda_convert_args, '--platform ') }} == true || \
+           $any_platform_inputs == true \
+        ]] && is_conversion_required=true || is_conversion_required=false
+        echo "is_conversion_required=$is_conversion_required" >> $GITHUB_ENV
+
+        # Check if a package transmutation is required and export a GitHub environment variable
+        [[ '${{ env.is_conda_format }}' == true && $is_conversion_required == true ]] && is_transmutation_required=true || is_transmutation_required=false
+        echo "is_transmutation_required=$is_transmutation_required" >> $GITHUB_ENV
+
+        # Transmute the package if needed
+        if [[ $is_transmutation_required == true ]]; then
+          if ! command -v cph &> /dev/null; then # if cph is not installed, install it
+              echo "'conda-package-handling' is not installed. Installing it..."
+              conda install anaconda::conda-package-handling
+          fi
+          cph transmute ${{ env.HOST_PACKAGE }} .tar.bz2
+          host_package_transmuted=$(sed 's|.conda$|.tar.bz2|' <<< ${{ env.HOST_PACKAGE }})
+          echo "Transmuted '$(basename ${{ env.HOST_PACKAGE }})' to '$(basename $host_package_transmuted)'."
+          echo "HOST_PACKAGE_TRANSMUTED=$host_package_transmuted" >> $GITHUB_ENV
+        else
+          echo "No transmutation needed."
+        fi
+        echo "::endgroup::"
+    - name: Packages conversion
+      id: conversion
+      shell: bash -l {0}
+      working-directory: ${{ inputs.meta_yaml_dir }}
+      run: |
         echo "::group::Converting package for other platforms"
-        conda_convert_command="conda convert $HOST_PACKAGE -o $out_dir ${{ inputs.conda_convert_args }}"
-        if "${{ inputs.platform_all }}"; then
-          platforms_options+=" -p all"
+        if [[ '${{ env.is_conversion_required }}' == true ]]; then
+          if "${{ inputs.platform_all }}"; then
+            platforms_options+=" -p all"
+          fi
+          if "${{ inputs.platform_linux-64 }}"; then
+            platforms_options+=" -p linux-64"
+          fi
+          if "${{ inputs.platform_linux-32 }}"; then
+            platforms_options+=" -p linux-32"
+          fi
+          if "${{ inputs.platform_osx-64 }}"; then
+            platforms_options+=" -p osx-64"
+          fi
+          if "${{ inputs.platform_osx-arm64 }}"; then
+            platforms_options+=" -p osx-arm64"
+          fi
+          if "${{ inputs.platform_linux-ppc64 }}"; then
+            platforms_options+=" -p linux-ppc64"
+          fi
+          if "${{ inputs.platform_linux-ppc64le }}"; then
+            platforms_options+=" -p linux-ppc64le"
+          fi
+          if "${{ inputs.platform_linux-s390x }}"; then
+            platforms_options+=" -p linux-s390x"
+          fi
+          if "${{ inputs.platform_linux-armv6l }}"; then
+            platforms_options+=" -p linux-armv6l"
+          fi
+          if "${{ inputs.platform_linux-armv7l }}"; then
+            platforms_options+=" -p linux-armv7l"
+          fi
+          if "${{ inputs.platform_linux-aarch64 }}"; then
+            platforms_options+=" -p linux-aarch64"
+          fi
+          if "${{ inputs.platform_win-32 }}"; then
+            platforms_options+=" -p win-32"
+          fi
+          if "${{ inputs.platform_win-64 }}"; then
+            platforms_options+=" -p win-64"
+          fi
+          if [[ '${{ env.is_transmutation_required}}' == true ]]; then
+            package_file=${{ env.HOST_PACKAGE_TRANSMUTED }}
+          else
+            package_file=${{ env.HOST_PACKAGE }}
+          fi
+          conda_convert_command="conda convert $package_file -o ${{ steps.compilation.outputs.out_dir }} ${{ inputs.conda_convert_args }}"
+          echo "${conda_convert_command}${platforms_options}"
+          eval "${conda_convert_command}${platforms_options}"
+        else
+          echo "No package conversion requested."
         fi
-        if "${{ inputs.platform_linux-64 }}"; then
-          platforms_options+=" -p linux-64"
-        fi
-        if "${{ inputs.platform_linux-32 }}"; then
-          platforms_options+=" -p linux-32"
-        fi
-        if "${{ inputs.platform_osx-64 }}"; then
-          platforms_options+=" -p osx-64"
-        fi
-        if "${{ inputs.platform_osx-arm64 }}"; then
-          platforms_options+=" -p osx-arm64"
-        fi
-        if "${{ inputs.platform_linux-ppc64 }}"; then
-          platforms_options+=" -p linux-ppc64"
-        fi
-        if "${{ inputs.platform_linux-ppc64le }}"; then
-          platforms_options+=" -p linux-ppc64le"
-        fi
-        if "${{ inputs.platform_linux-s390x }}"; then
-          platforms_options+=" -p linux-s390x"
-        fi
-        if "${{ inputs.platform_linux-armv6l }}"; then
-          platforms_options+=" -p linux-armv6l"
-        fi
-        if "${{ inputs.platform_linux-armv7l }}"; then
-          platforms_options+=" -p linux-armv7l"
-        fi
-        if "${{ inputs.platform_linux-aarch64 }}"; then
-          platforms_options+=" -p linux-aarch64"
-        fi
-        if "${{ inputs.platform_win-32 }}"; then
-          platforms_options+=" -p win-32"
-        fi
-        if "${{ inputs.platform_win-64 }}"; then
-          platforms_options+=" -p win-64"
-        fi
-        if [ -n "$platforms_options" ]; then
-            echo "${conda_convert_command}${platforms_options}"
-            eval "${conda_convert_command}${platforms_options}"
-        fi
-        if ! "${{ inputs.platform_host }}"; then
-          rm $HOST_PACKAGE
+        if ! "${{ inputs.keep_host_platform }}"; then
+          rm '${{ env.HOST_PACKAGE }}'
+          rm '${{ env.HOST_PACKAGE_TRANSMUTED }}' &> /dev/null
           echo "Package for host platform removed."
         fi
         echo "::endgroup::"
-    - name: Packages uploading
-      id: packages-uploading
+    - name: Transmute .tar.bz2 packages back to .conda
+      id: back-transmutation
+      shell: bash -l {0}
+      run: |
+        echo "::group::Transmute packages back to '.conda' format"
+        if [[ ${{ env.is_transmutation_required }} == true ]]; then
+          # find transmuted .tar.bz2 packages
+          transmuted_packages=$(find ${{ steps.compilation.outputs.out_dir }} -type f -name $(basename '${{ env.HOST_PACKAGE_TRANSMUTED }}'))
+          for package_path in $transmuted_packages; do
+            cph transmute $package_path .conda
+          done
+          echo "Transmuted '$(basename $package_path)' packages back to '$(basename '${{env.HOST_PACKAGE}}')'."
+        else
+          echo "No transmutation needed."
+        fi
+        echo "::endgroup::"
+    - name: Set output paths
+      id: set-output-paths
+      shell: bash -l {0}
+      run: |
+        echo "::group::Setting output paths"
+        paths=($(find ${{ steps.compilation.outputs.out_dir }} -type f -name $(basename ${{ env.HOST_PACKAGE }})))
+        echo "Output paths set to: ${paths[@]}"
+        echo "paths=${paths[@]}" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+    - name: Packages upload
+      id: upload
       if: inputs.upload == 'true'
       shell: bash -l {0}
       working-directory: ${{ inputs.meta_yaml_dir }}
@@ -259,18 +316,10 @@ runs:
         echo "::group::Conda packages uploading"
         label=${{ inputs.label }}
         label=${label:-main} #If label is empty (input not provided), set it to 'main'
-        if [[ "${{ inputs.overwrite }}" == true ]]; then
-          force=--force
-        fi
         export ANACONDA_API_TOKEN=${{ inputs.token }}
-        SHORT_SHA="$(git rev-parse --short $GITHUB_SHA)"
-        package_paths=$(find ${{ steps.packages-compilation.outputs.out_dir }} -type f -name $(basename ${{ steps.packages-compilation.outputs.HOST_PACKAGE }}))
-        for package_path in $package_paths; do
-          command="anaconda upload --user ${{ inputs.user }} $force --label $label ${{ inputs.anaconda_upload_args }} $package_path"
+        for package_path in ${{ steps.set-output-paths.outputs.paths }}; do
+          command="anaconda upload --user ${{ inputs.user }} --label $label ${{ inputs.anaconda_upload_args }} $package_path"
           echo "$command"
           eval "$command"
-          paths+=($package_path)
         done
-        echo "paths=${paths[@]}" >> $GITHUB_OUTPUT 
         echo "::endgroup::"
-
