@@ -37,7 +37,7 @@ jobs:
       matrix:
         include:
           - id: 1
-            label: "Test: Conversion to all platforms, 'conda_build_args' argument, '.conda' package format."
+            label: "Test: Conversion to all platforms, '.conda' package format."
             inputs: >-
                 "platform_all": true,
                 "conda_build_args": --package-format .conda
@@ -56,7 +56,7 @@ jobs:
               win-64/asyncio-3.4.1-py311_0.conda
               win-arm64/asyncio-3.4.1-py311_0.conda
           - id: 2
-            label: "Test: Conversion to specific platforms, 'conda_convert_args' argument, '.tar.bz2' package format."
+            label: "Test: Conversion to specific platforms through 'platform_*' inputs and 'conda_convert_args' inputs, '.tar.bz2' package format."
             inputs: >-
                 "platform_win-32": true,
                 "platform_win-64": true,
@@ -70,13 +70,13 @@ jobs:
               win-32/asyncio-3.4.1-py311_0.tar.bz2
               win-64/asyncio-3.4.1-py311_0.tar.bz2
           - id: 3
-            label: "Test: 'platform_host: false', 'anaconda_upload_args' argument."
+            label: "Test: 'keep_host_platform: false', 'anaconda_upload_args' argument."
             inputs: >-
-                "platform_host": false,
+                "keep_host_platform": false,
                 "anaconda_upload_args": --label mylabel
             expected_outputs: ""
           - id: 4
-            label: "Test: 'platform_host: false', 'anaconda_upload_args' argument."
+            label: "Test: Conversion to specific platforms only through 'conda_convert_args' inputs, '.tar.bz2' package format."
             inputs: >-
                 "conda_convert_args": --platform win-32 -p osx-arm64,
                 "conda_build_args": --package-format .tar.bz2
