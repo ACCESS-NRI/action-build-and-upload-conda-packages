@@ -100,9 +100,9 @@ jobs:
     name: Cleanup tag
     needs: [check-release-tag,create-release]
     # Run this job if:
-    # 1. The tag is a release tag and any of the previous jobs failed (also don't skip if any of the needed jobs is skipped)
+    # 1. Any of the previous jobs failed (also don't skip if any of the needed jobs is skipped)
     # 2. The workflow is cancelled
-    if: ${{ ( always() && failure() && needs.check-release-tag.outputs.is_release_tag == 'true') || cancelled() }}
+    if: ${{ ( always() && failure() ) || cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
