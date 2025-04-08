@@ -14,9 +14,6 @@ jobs:
     outputs:
       is_release_tag: ${{ steps.check-tag.outputs.is_release_tag }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Check tag
         id: check-tag
         run: |
