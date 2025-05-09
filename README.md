@@ -1,11 +1,11 @@
 [conda-build-recipe]: https://docs.conda.io/projects/conda-build/en/stable/concepts/recipe.html
 [UIBCDF]: https://www.uibcdf.org/
+[upstream]: https://github.com/ACCESS-NRI/action-build-and-upload-conda-packages
 [anaconda.org]: https://anaconda.org/
 [GitHub workflow]: https://docs.github.com/en/actions/writing-workflows/about-workflows
 [conda-build-command]: https://docs.conda.io/projects/conda-build/en/stable/resources/commands/conda-build.html
 [conda-convert-command]: https://docs.conda.io/projects/conda-build/en/stable/resources/commands/conda-convert.html
 [anaconda-upload-command]: https://docs.anaconda.com/anaconda-repository/commandreference/#upload
-[upstream]: https://github.com/uibcdf/action-build-and-upload-conda-packages
 
 # action-build-and-upload-conda-packages
 [![Open Source Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
@@ -68,14 +68,14 @@ steps:
       - name: Conda environment creation and activation
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: 
+          python-version: 3.11
           environment-file: path/to/conda/env.yaml # Path to the conda environment
           auto-update-conda: false
           auto-activate-base: false
           show-channel-urls: true
       ...      
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         ...
 ```
 
@@ -155,10 +155,10 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
 ```
 
@@ -267,10 +267,10 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
 ```
 
@@ -311,10 +311,10 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
           platform_linux-64: true
           platform_osx-64: true
@@ -358,10 +358,10 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
 ```
 
@@ -408,10 +408,10 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
           platform_osx-64: true
           conda_build_args: --override-chanels --channel my_channel # Replace my_channel with the name of the specific channel
@@ -491,10 +491,10 @@ jobs:
             label=main
           echo "label=$label" >> $GITHUB_OUTPUT
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
           label: ${{ steps.set-label.outputs.label }}
 ```
@@ -528,10 +528,10 @@ jobs:
           show-channel-urls: true
       - name: Build and upload the conda packages
         id: conda-build-and-upload
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
       - name: Re-format output paths
         id: reformat-paths
@@ -581,10 +581,10 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
           upload: false
 ```
@@ -619,10 +619,10 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: uibcdf/action-build-and-upload-conda-packages@v2.0.0
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
-          user: uibcdf # Replace with your Anaconda username (or an Anaconda organization username)
+          user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
           token: ${{ secrets.ANACONDA_TOKEN }} # Replace with the name of your Anaconda Token secret
           anaconda_upload_args: --force
 ```
@@ -632,5 +632,5 @@ jobs:
 
 ## Acknowledgements
 
-This GitHub Action was forked from [uibcdf/action-build-and-upload-conda-packages][upstream], originally developed by the [Computational Biology and Drug Design Research Unit (UIBCDF) at the
+This GitHub Action was forked from [ACCESS-NRI/action-build-and-upload-conda-packages][upstream], originally developed by the [Computational Biology and Drug Design Research Unit (UIBCDF) at the
 Mexico City Children's Hospital Federico Gómez][UIBCDF].
