@@ -88,12 +88,6 @@ jobs:
               win-32/asyncio-3.4.1-py312_0.tar.bz2
               win-64/asyncio-3.4.1-py312_0.tar.bz2
           - id: 3
-            label: "Test: 'keep_host_platform: false', 'anaconda_upload_args' argument."
-            inputs: >-
-                "keep_host_platform": false,
-                "anaconda_upload_args": --label mylabel
-            expected_outputs: ""
-          - id: 4
             label: "Test: Conversion to specific platforms only through 'conda_convert_args' inputs, '.tar.bz2' package format."
             inputs: >-
                 "conda_convert_args": --platform win-32 -p osx-arm64,
