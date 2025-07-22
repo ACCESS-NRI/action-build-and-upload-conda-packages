@@ -133,13 +133,19 @@ jobs:
         run: |
           # Remove the folder name from the path, only leaving the architecture folder (e.g. linux-64/package_name)
           for path in ${{ env.OUTPUT_PATHS }}; do
-            output_paths+=($(sed -E 's|.*/([^/]+/[^/]+)$|\1|g' <<< $path))
+            output_paths+=($(basename "$(dirname "$path")")/$(basename "$path"))
           done
           # Sort output and expected paths alphabetically, to make the comparison easier
           output_paths=($(printf "%s\n" "${output_paths[@]}" | sort))
-          expected_paths=($(printf "%s\n" '${{ env.EXPECTED_OUTPUTS }}' | sort))
+          expected_paths=($(printf "%s\n" ${{ env.EXPECTED_OUTPUTS }} | sort))
           if [[ "${output_paths[@]}" != "${expected_paths[@]}" ]]; then
-            echo "Wrong outputs. Outputs expected: [$(tr ' ' ', ' <<< ${expected_paths[@]})], outputs found: [$(tr ' ' ', ' <<< ${output_paths[@]})]."
+            echo "::error:: The outputs do not match the expected outputs."
+            echo "Expected outputs:"
+            printf "%s\n" "${expected_paths[@]}"
+            echo "Actual outputs:"
+            printf "%s\n" "${output_paths[@]}"
+            echo "Difference:"
+            diff <(printf "%s\n" "${expected_paths[@]}") <(printf "%s\n" "${output_paths[@]}")
             exit 1
           fi
 
