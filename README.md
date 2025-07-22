@@ -75,7 +75,7 @@ steps:
           show-channel-urls: true
       ...      
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         ...
 ```
 
@@ -155,7 +155,7 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
@@ -266,7 +266,7 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
@@ -310,7 +310,7 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
@@ -357,7 +357,7 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
@@ -407,7 +407,7 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
@@ -490,7 +490,7 @@ jobs:
             label=main
           echo "label=$label" >> $GITHUB_OUTPUT
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
@@ -527,7 +527,7 @@ jobs:
           show-channel-urls: true
       - name: Build and upload the conda packages
         id: conda-build-and-upload
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
@@ -580,7 +580,7 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           upload: false
@@ -616,7 +616,7 @@ jobs:
           auto-activate-base: false
           show-channel-urls: true
       - name: Build and upload the conda packages
-        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v3.0.0
         with:
           meta_yaml_dir: path/to/meta.yaml/directory # Replace with the path to your meta.yaml directory
           user: myuser # Replace with your Anaconda username (or an Anaconda organization username)
