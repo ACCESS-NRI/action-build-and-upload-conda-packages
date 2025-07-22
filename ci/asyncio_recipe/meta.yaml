@@ -22,9 +22,6 @@ test:
     imports:
         - asyncio
 
-    #commands:
-    #    -
-
 about:
     home: http://www.python.org/dev/peps/pep-3156/
     license: Apache 2.0
