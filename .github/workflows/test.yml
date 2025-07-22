@@ -133,9 +133,9 @@ jobs:
           OUTPUT_PATHS: ${{ fromJson(steps.test-action.outputs.outputs).paths }} # https://github.com/jenseng/dynamic-uses?tab=readme-ov-file#gotchaslimitations
         run: |
           # Remove the folder name from the path, only leaving the architecture folder (e.g. linux-64/package_name)
-          for path in ${{ env.OUTPUT_PATHS }}; do
+          while IFS= read -r path; do
             output_paths+=($(basename "$(dirname "$path")")/$(basename "$path"))
-          done
+          done <<< '${{ env.OUTPUT_PATHS }}'
           # Sort output and expected paths alphabetically, to make the comparison easier
           output_paths=($(printf "%s\n" "${output_paths[@]}" | sort))
           expected_paths=($(printf "%s\n" ${{ env.EXPECTED_OUTPUTS }} | sort))

@@ -312,8 +312,14 @@ runs:
         echo "::group::Setting output paths"
         [[ '${{ env.IS_CONDA_FORMAT }}' == true ]] && package_extension='.conda' || package_extension='.tar.bz2'
         paths=($(find ${{ steps.compilation.outputs.out_dir }} -type f -name "*${package_extension}"))
-        echo "Output paths set to: '${paths[*]}'"
-        echo "paths=${paths[*]}" >> $GITHUB_OUTPUT
+        echo "Output paths:"
+        printf "%s\n" "${paths[@]}"
+        # Set multi-line output
+        {
+          echo 'paths<<EOF'
+          printf "%s\n" "${paths[@]}"
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
     - name: Packages upload
       id: upload
@@ -325,7 +331,7 @@ runs:
         label=${{ inputs.label }}
         label=${label:-main} #If label is empty (input not provided), set it to 'main'
         export ANACONDA_API_TOKEN=${{ inputs.token }}
-        for package_path in ${{ steps.set-output-paths.outputs.paths }}; do
+        for package_path in '${{ steps.set-output-paths.outputs.paths }}'; do
           command="anaconda upload --user ${{ inputs.user }} --label $label ${{ inputs.anaconda_upload_args }} $package_path"
           echo "$command"
           eval "$command"
