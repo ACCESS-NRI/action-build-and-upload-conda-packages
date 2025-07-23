@@ -189,7 +189,7 @@ runs:
         if [ -z "$host_packages" ]; then
           echo "::warning:: No package was built."
         else
-          echo "Successfully built following packages for host platform:"
+          echo "Successfully built following packages:"
           printf "%s\n" "${host_packages[@]}"
         fi
         echo "::endgroup::"
