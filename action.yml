@@ -311,7 +311,10 @@ runs:
       run: |
         echo "::group::Setting output paths"
         [[ '${{ env.IS_CONDA_FORMAT }}' == true ]] && package_extension='.conda' || package_extension='.tar.bz2'
-        paths=($(find ${{ steps.compilation.outputs.out_dir }} -type f -name "*${package_extension}"))
+        command="find '${{ steps.compilation.outputs.out_dir }}' -type f -name '*${package_extension}'"
+        echo "$command"
+        eval "$command"
+        paths=($(eval "$command"))
         echo "Output paths:"
         printf "%s\n" "${paths[@]}"
         # Set multi-line output
