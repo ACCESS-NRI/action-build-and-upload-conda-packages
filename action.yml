@@ -178,7 +178,15 @@ runs:
         out_dir=`mktemp -d -t compilation-XXXXXXXXXX`
         echo "out_dir=$out_dir" >> $GITHUB_OUTPUT
         conda_build_command="conda build . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
-        host_packages=($(eval "$conda_build_command --output"))
+        # Get name of the built packages using `--output` flag
+        host_packages_raw=$(eval "$conda_build_command --output")
+        # In some cases (e.g., when patches are present), the output of the `--output` flag 
+        # is not only the names of the packages, but includes additional information.
+        # We should strip this from the output packages. 
+        # One possible way (not 100% reliable, but cannot find a better solution at the moment) 
+        # is to only get the content of the output after the last blank line, since
+        # the output files are printed in subsequent lines without blank lines in between.
+        host_packages=$(awk 'BEGIN{RS="";ORS="\n\n"} {block=$0} END{print block}' <<< "$host_packages_raw")
         echo "Building the following packages:"
         printf "%s\n" "${host_packages[@]}"
         echo "$conda_build_command"
