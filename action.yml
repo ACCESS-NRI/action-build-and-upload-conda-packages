@@ -186,7 +186,7 @@ runs:
         # One possible way (not 100% reliable, but cannot find a better solution at the moment) 
         # is to only get the content of the output after the last blank line, since
         # the output files are printed in subsequent lines without blank lines in between.
-        host_packages=$(awk 'BEGIN{RS="";ORS="\n\n"} {block=$0} END{print block}' <<< "$host_packages_raw")
+        host_packages=($(awk 'BEGIN{RS="";ORS="\n\n"} {block=$0} END{print block}' <<< "$host_packages_raw"))
         echo "Building the following packages:"
         printf "%s\n" "${host_packages[@]}"
         echo "$conda_build_command"
