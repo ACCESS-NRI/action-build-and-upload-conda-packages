@@ -191,15 +191,20 @@ runs:
         printf "%s\n" "${host_packages[@]}"
         echo "$conda_build_command"
         eval "$conda_build_command"
-        [[ "${host_packages[0]}" == *.conda ]] && is_conda_format=true || is_conda_format=false
-        echo "HOST_PACKAGES=${host_packages[*]}" >> $GITHUB_ENV
-        echo "IS_CONDA_FORMAT=$is_conda_format" >> $GITHUB_ENV
+        # Exit if the conda build command fails
+        if [ $? -ne 0 ]; then
+          echo "::error::Conda build failed. Please check the logs for more details."
+          exit 1
+        fi
         if [ -z "$host_packages" ]; then
           echo "::warning:: No package was built."
         else
           echo "Successfully built following packages:"
           printf "%s\n" "${host_packages[@]}"
         fi
+        [[ "${host_packages[0]}" == *.conda ]] && is_conda_format=true || is_conda_format=false
+        echo "HOST_PACKAGES=${host_packages[*]}" >> $GITHUB_ENV
+        echo "IS_CONDA_FORMAT=$is_conda_format" >> $GITHUB_ENV
         echo "::endgroup::"
     - name: Transmute .conda packages to .tar.bz2
       id: transmutation
