@@ -1,8 +1,7 @@
 name: test
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
-  - python=3.11
   - conda-build=25.1.2
   - anaconda-client

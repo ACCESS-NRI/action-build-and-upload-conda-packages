@@ -37,6 +37,13 @@ jobs:
       matrix:
         include:
           - id: 1
+            label: "Test: '.tar.bz2' package format."
+            inputs: >-
+                "conda_build_args": --package-format .tar.bz2
+            expected_outputs: >-
+                linux-64/asyncio-3.4.1-py311_0.tar.bz2
+                linux-64/asyncio-3.4.1-py312_0.tar.bz2
+          - id: 2
             label: "Test: Conversion to all platforms, '.conda' package format."
             inputs: >-
                 "platform_all": true,
@@ -55,7 +62,20 @@ jobs:
               win-32/asyncio-3.4.1-py311_0.conda
               win-64/asyncio-3.4.1-py311_0.conda
               win-arm64/asyncio-3.4.1-py311_0.conda
-          - id: 2
+              linux-32/asyncio-3.4.1-py312_0.conda
+              linux-64/asyncio-3.4.1-py312_0.conda
+              linux-aarch64/asyncio-3.4.1-py312_0.conda
+              linux-armv6l/asyncio-3.4.1-py312_0.conda
+              linux-armv7l/asyncio-3.4.1-py312_0.conda
+              linux-ppc64/asyncio-3.4.1-py312_0.conda
+              linux-ppc64le/asyncio-3.4.1-py312_0.conda
+              linux-s390x/asyncio-3.4.1-py312_0.conda
+              osx-64/asyncio-3.4.1-py312_0.conda
+              osx-arm64/asyncio-3.4.1-py312_0.conda
+              win-32/asyncio-3.4.1-py312_0.conda
+              win-64/asyncio-3.4.1-py312_0.conda
+              win-arm64/asyncio-3.4.1-py312_0.conda
+          - id: 3
             label: "Test: Conversion to specific platforms through 'platform_*' inputs and 'conda_convert_args' inputs, '.tar.bz2' package format."
             inputs: >-
                 "platform_win-32": true,
@@ -69,12 +89,11 @@ jobs:
               osx-arm64/asyncio-3.4.1-py311_0.tar.bz2
               win-32/asyncio-3.4.1-py311_0.tar.bz2
               win-64/asyncio-3.4.1-py311_0.tar.bz2
-          - id: 3
-            label: "Test: 'keep_host_platform: false', 'anaconda_upload_args' argument."
-            inputs: >-
-                "keep_host_platform": false,
-                "anaconda_upload_args": --label mylabel
-            expected_outputs: ""
+              linux-64/asyncio-3.4.1-py312_0.tar.bz2
+              osx-64/asyncio-3.4.1-py312_0.tar.bz2
+              osx-arm64/asyncio-3.4.1-py312_0.tar.bz2
+              win-32/asyncio-3.4.1-py312_0.tar.bz2
+              win-64/asyncio-3.4.1-py312_0.tar.bz2
           - id: 4
             label: "Test: Conversion to specific platforms only through 'conda_convert_args' inputs, '.tar.bz2' package format."
             inputs: >-
@@ -84,6 +103,9 @@ jobs:
                 linux-64/asyncio-3.4.1-py311_0.tar.bz2
                 osx-arm64/asyncio-3.4.1-py311_0.tar.bz2
                 win-32/asyncio-3.4.1-py311_0.tar.bz2
+                linux-64/asyncio-3.4.1-py312_0.tar.bz2
+                osx-arm64/asyncio-3.4.1-py312_0.tar.bz2
+                win-32/asyncio-3.4.1-py312_0.tar.bz2
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -111,14 +133,20 @@ jobs:
           OUTPUT_PATHS: ${{ fromJson(steps.test-action.outputs.outputs).paths }} # https://github.com/jenseng/dynamic-uses?tab=readme-ov-file#gotchaslimitations
         run: |
           # Remove the folder name from the path, only leaving the architecture folder (e.g. linux-64/package_name)
-          for path in ${{ env.OUTPUT_PATHS }}; do
-            output_paths+=($(sed -E 's|.*/([^/]+/[^/]+)$|\1|g' <<< $path))
-          done
+          while IFS= read -r path; do
+            output_paths+=($(basename "$(dirname "$path")")/$(basename "$path"))
+          done <<< '${{ env.OUTPUT_PATHS }}'
           # Sort output and expected paths alphabetically, to make the comparison easier
           output_paths=($(printf "%s\n" "${output_paths[@]}" | sort))
-          expected_paths=($(printf "%s\n" '${{ env.EXPECTED_OUTPUTS }}' | sort))
+          expected_paths=($(printf "%s\n" ${{ env.EXPECTED_OUTPUTS }} | sort))
           if [[ "${output_paths[@]}" != "${expected_paths[@]}" ]]; then
-            echo "Wrong outputs. Outputs expected: [$(tr ' ' ', ' <<< ${expected_paths[@]})], outputs found: [$(tr ' ' ', ' <<< ${output_paths[@]})]."
+            echo "::error:: The outputs do not match the expected outputs."
+            echo "Expected outputs:"
+            printf "%s\n" "${expected_paths[@]}"
+            echo "Actual outputs:"
+            printf "%s\n" "${output_paths[@]}"
+            echo "Difference:"
+            diff <(printf "%s\n" "${expected_paths[@]}") <(printf "%s\n" "${output_paths[@]}")
             exit 1
           fi
 

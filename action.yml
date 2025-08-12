@@ -8,10 +8,6 @@ inputs:
   meta_yaml_dir:
     description: Path to the directory in the repository where the meta.yaml file is located.
     required: true
-  keep_host_platform:
-    description: Keep the package built for the host platform.
-    required: false
-    default: true
   platform_all:
     description: Target all supported platforms.
     required: false
@@ -154,8 +150,8 @@ runs:
         echo "Associated commit SHA: $GITHUB_SHA"
         echo "::endgroup::"
     - name: Checking if meta.yaml is in meta_yaml_dir
-      shell: bash -l {0}
       working-directory: ${{ inputs.meta_yaml_dir }}
+      shell: bash -l {0}
       run: |
         echo "::group::Checking if the file meta.yaml exists"
         if [ ! -f meta.yaml ]; then
@@ -165,23 +161,50 @@ runs:
            echo "A meta.yaml file with the compilation instructions of the conda package was found in ${{ inputs.meta_yaml_dir }}."
         fi
         echo "::endgroup::"
+    - name: Conda build version
+      id: conda-build-version
+      shell: bash -l {0}
+      run: |
+        echo "::group::Conda build version"
+        conda build --version
+        echo "::endgroup::"
     - name: Packages compilation
       id: compilation
-      shell: bash -l {0}
       working-directory: ${{ inputs.meta_yaml_dir }}
+      shell: bash -l {0}
       run: |
-        echo "::group::Building conda package for host platform"
+        host_platform=$(conda info --json | jq -r '.platform')
+        echo "::group::Building conda package for '${host_platform}' platform"
         out_dir=`mktemp -d -t compilation-XXXXXXXXXX`
         echo "out_dir=$out_dir" >> $GITHUB_OUTPUT
         conda_build_command="conda build . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
+        # Get name of the built packages using `--output` flag
+        host_packages_raw=$(eval "$conda_build_command --output")
+        # In some cases (e.g., when patches are present), the output of the `--output` flag 
+        # is not only the names of the packages, but includes additional information.
+        # We should strip this from the output packages. 
+        # One possible way (not 100% reliable, but cannot find a better solution at the moment) 
+        # is to only get the content of the output after the last blank line, since
+        # the output files are printed in subsequent lines without blank lines in between.
+        host_packages=($(awk 'BEGIN{RS="";ORS="\n\n"} {block=$0} END{print block}' <<< "$host_packages_raw"))
+        echo "Building the following packages:"
+        printf "%s\n" "${host_packages[@]}"
         echo "$conda_build_command"
         eval "$conda_build_command"
-        HOST_PACKAGE=$(eval "$conda_build_command --output")
-        [[ "$HOST_PACKAGE" == *.conda ]] && is_conda_format=true || is_conda_format=false
-        echo "HOST_PACKAGE=$HOST_PACKAGE" >> $GITHUB_ENV
-        echo "is_conda_format=$is_conda_format" >> $GITHUB_ENV
-        echo "Package for host platform compiled as $HOST_PACKAGE"
-        du -sh $HOST_PACKAGE
+        # Exit if the conda build command fails
+        if [ $? -ne 0 ]; then
+          echo "::error::Conda build failed. Please check the logs for more details."
+          exit 1
+        fi
+        if [ -z "$host_packages" ]; then
+          echo "::warning:: No package was built."
+        else
+          echo "Successfully built following packages:"
+          printf "%s\n" "${host_packages[@]}"
+        fi
+        [[ "${host_packages[0]}" == *.conda ]] && is_conda_format=true || is_conda_format=false
+        echo "HOST_PACKAGES=${host_packages[*]}" >> $GITHUB_ENV
+        echo "IS_CONDA_FORMAT=$is_conda_format" >> $GITHUB_ENV
         echo "::endgroup::"
     - name: Transmute .conda packages to .tar.bz2
       id: transmutation
@@ -199,11 +222,11 @@ runs:
            ${{ contains(inputs.conda_convert_args, '--platform ') }} == true || \
            $any_platform_inputs == true \
         ]] && is_conversion_required=true || is_conversion_required=false
-        echo "is_conversion_required=$is_conversion_required" >> $GITHUB_ENV
+        echo "IS_CONVERSION_REQUIRED=$is_conversion_required" >> $GITHUB_ENV
 
         # Check if a package transmutation is required and export a GitHub environment variable
-        [[ '${{ env.is_conda_format }}' == true && $is_conversion_required == true ]] && is_transmutation_required=true || is_transmutation_required=false
-        echo "is_transmutation_required=$is_transmutation_required" >> $GITHUB_ENV
+        [[ '${{ env.IS_CONDA_FORMAT }}' == true && $is_conversion_required == true ]] && is_transmutation_required=true || is_transmutation_required=false
+        echo "IS_TRANSMUTATION_REQUIRED=$is_transmutation_required" >> $GITHUB_ENV
 
         # Transmute the package if needed
         if [[ $is_transmutation_required == true ]]; then
@@ -211,21 +234,24 @@ runs:
               echo "'conda-package-handling' is not installed. Installing it..."
               conda install anaconda::conda-package-handling
           fi
-          cph transmute ${{ env.HOST_PACKAGE }} .tar.bz2
-          host_package_transmuted=$(sed 's|.conda$|.tar.bz2|' <<< ${{ env.HOST_PACKAGE }})
-          echo "Transmuted '$(basename ${{ env.HOST_PACKAGE }})' to '$(basename $host_package_transmuted)'."
-          echo "HOST_PACKAGE_TRANSMUTED=$host_package_transmuted" >> $GITHUB_ENV
+          for package in ${{ env.HOST_PACKAGES }}; do
+            transmuted_name="${package%.conda}.tar.bz2"
+            cph transmute "$package" .tar.bz2
+            echo "Transmuted '$(basename $package)' to '$(basename $transmuted_name)'."
+            host_package_transmuted+=($transmuted_name)
+          done
+          echo "HOST_PACKAGES_TRANSMUTED=${host_package_transmuted[*]}" >> $GITHUB_ENV
         else
           echo "No transmutation needed."
         fi
         echo "::endgroup::"
     - name: Packages conversion
       id: conversion
-      shell: bash -l {0}
       working-directory: ${{ inputs.meta_yaml_dir }}
+      shell: bash -l {0}
       run: |
         echo "::group::Converting package for other platforms"
-        if [[ '${{ env.is_conversion_required }}' == true ]]; then
+        if [[ '${{ env.IS_CONVERSION_REQUIRED }}' == true ]]; then
           if "${{ inputs.platform_all }}"; then
             platforms_options+=" -p all"
           fi
@@ -265,21 +291,16 @@ runs:
           if "${{ inputs.platform_win-64 }}"; then
             platforms_options+=" -p win-64"
           fi
-          if [[ '${{ env.is_transmutation_required}}' == true ]]; then
-            package_file=${{ env.HOST_PACKAGE_TRANSMUTED }}
+          if [[ '${{ env.IS_TRANSMUTATION_REQUIRED}}' == true ]]; then
+            package_files='${{ env.HOST_PACKAGES_TRANSMUTED }}'
           else
-            package_file=${{ env.HOST_PACKAGE }}
+            package_files='${{ env.HOST_PACKAGES }}'
           fi
-          conda_convert_command="conda convert $package_file -o ${{ steps.compilation.outputs.out_dir }} ${{ inputs.conda_convert_args }}"
-          echo "${conda_convert_command}${platforms_options}"
-          eval "${conda_convert_command}${platforms_options}"
+          conda_convert_command="conda convert -o ${{ steps.compilation.outputs.out_dir }} ${{ inputs.conda_convert_args }} ${platforms_options} $package_files"
+          echo "${conda_convert_command}"
+          eval "${conda_convert_command}"
         else
           echo "No package conversion requested."
-        fi
-        if ! "${{ inputs.keep_host_platform }}"; then
-          rm '${{ env.HOST_PACKAGE }}'
-          rm '${{ env.HOST_PACKAGE_TRANSMUTED }}' &> /dev/null
-          echo "Package for host platform removed."
         fi
         echo "::endgroup::"
     - name: Transmute .tar.bz2 packages back to .conda
@@ -287,13 +308,12 @@ runs:
       shell: bash -l {0}
       run: |
         echo "::group::Transmute packages back to '.conda' format"
-        if [[ ${{ env.is_transmutation_required }} == true ]]; then
-          # find transmuted .tar.bz2 packages
-          transmuted_packages=$(find ${{ steps.compilation.outputs.out_dir }} -type f -name $(basename '${{ env.HOST_PACKAGE_TRANSMUTED }}'))
-          for package_path in $transmuted_packages; do
-            cph transmute $package_path .conda
+        if [[ '${{ env.IS_TRANSMUTATION_REQUIRED }}' == true ]]; then
+          packages=$(find ${{ steps.compilation.outputs.out_dir }} -type f -name "*.tar.bz2")
+          for package in $packages; do
+            cph transmute $package .conda
+            echo "Transmuted '$package' to '${package%.tar.bz2}.conda'."
           done
-          echo "Transmuted '$(basename $package_path)' packages back to '$(basename '${{env.HOST_PACKAGE}}')'."
         else
           echo "No transmutation needed."
         fi
@@ -303,23 +323,33 @@ runs:
       shell: bash -l {0}
       run: |
         echo "::group::Setting output paths"
-        paths=($(find ${{ steps.compilation.outputs.out_dir }} -type f -name $(basename ${{ env.HOST_PACKAGE }})))
-        echo "Output paths set to: ${paths[@]}"
-        echo "paths=${paths[@]}" >> $GITHUB_OUTPUT
+        [[ '${{ env.IS_CONDA_FORMAT }}' == true ]] && package_extension='.conda' || package_extension='.tar.bz2'
+        command="find '${{ steps.compilation.outputs.out_dir }}' -type f -name '*${package_extension}'"
+        echo "$command"
+        eval "$command"
+        paths=($(eval "$command"))
+        echo "Output paths:"
+        printf "%s\n" "${paths[@]}"
+        # Set multi-line output
+        {
+          echo 'paths<<EOF'
+          printf "%s\n" "${paths[@]}"
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
     - name: Packages upload
       id: upload
       if: inputs.upload == 'true'
-      shell: bash -l {0}
       working-directory: ${{ inputs.meta_yaml_dir }}
+      shell: bash -l {0}
       run: |
         echo "::group::Conda packages uploading"
         label=${{ inputs.label }}
         label=${label:-main} #If label is empty (input not provided), set it to 'main'
         export ANACONDA_API_TOKEN=${{ inputs.token }}
-        for package_path in ${{ steps.set-output-paths.outputs.paths }}; do
+        while IFS= read -r package_path; do
           command="anaconda upload --user ${{ inputs.user }} --label $label ${{ inputs.anaconda_upload_args }} $package_path"
           echo "$command"
           eval "$command"
-        done
+        done <<< '${{ steps.set-output-paths.outputs.paths }}'
         echo "::endgroup::"
