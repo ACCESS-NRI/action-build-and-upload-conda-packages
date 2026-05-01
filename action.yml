@@ -81,7 +81,7 @@ inputs:
     required: false
     default: ''
   conda_convert_args:
-    description: Optional arguments to pass to the 'conda convert' command.
+    description: Optional arguments to pass to the 'conda-convert' command.
     required: false
     default: ''
   anaconda_upload_args:
@@ -210,7 +210,7 @@ runs:
       id: transmutation
       shell: bash -l {0}
       run: |
-        # conda convert does not support .conda packages yet, therefore, we need to convert them 
+        # conda-convert does not support .conda packages yet, therefore, we need to convert them 
         # to .tar.bz2 first and then convert them back to .conda
         # More info --> https://github.com/uibcdf/action-build-and-upload-conda-packages/issues/25
         # Only perform transmutation if the package is a .conda package or conversion has been requested
@@ -296,7 +296,7 @@ runs:
           else
             package_files='${{ env.HOST_PACKAGES }}'
           fi
-          conda_convert_command="conda convert -o ${{ steps.compilation.outputs.out_dir }} ${{ inputs.conda_convert_args }} ${platforms_options} $package_files"
+          conda_convert_command="conda-convert -o ${{ steps.compilation.outputs.out_dir }} ${{ inputs.conda_convert_args }} ${platforms_options} $package_files"
           echo "${conda_convert_command}"
           eval "${conda_convert_command}"
         else
