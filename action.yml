@@ -77,7 +77,7 @@ inputs:
     required: false
     default: ''
   conda_build_args:
-    description: Optional arguments to pass to the 'conda build' command.
+    description: Optional arguments to pass to the 'conda-build' command.
     required: false
     default: ''
   conda_convert_args:
@@ -113,7 +113,7 @@ runs:
           fi
         fi
         if ${{ contains(inputs.conda_build_args, '--no-anaconda-upload') }}; then
-            echo -e "The argument '--no-anaconda-upload' is already used within this action's 'conda build' command and is not allowed in 'conda_build_args'."
+            echo -e "The argument '--no-anaconda-upload' is already used within this action's 'conda-build' command and is not allowed in 'conda_build_args'."
             exit 1
         fi
         if ${{ contains(inputs.conda_build_args, '--output-folder') }}; then
@@ -161,12 +161,12 @@ runs:
            echo "A meta.yaml file with the compilation instructions of the conda package was found in ${{ inputs.meta_yaml_dir }}."
         fi
         echo "::endgroup::"
-    - name: Conda build version
+    - name: Conda-build version
       id: conda-build-version
       shell: bash -l {0}
       run: |
         echo "::group::Conda build version"
-        conda build --version
+        conda-build --version
         echo "::endgroup::"
     - name: Packages compilation
       id: compilation
@@ -177,7 +177,7 @@ runs:
         echo "::group::Building conda package for '${host_platform}' platform"
         out_dir=`mktemp -d -t compilation-XXXXXXXXXX`
         echo "out_dir=$out_dir" >> $GITHUB_OUTPUT
-        conda_build_command="conda build . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
+        conda_build_command="conda-build . --no-anaconda-upload --output-folder $out_dir ${{ inputs.conda_build_args }}"
         # Get name of the built packages using `--output` flag
         host_packages_raw=$(eval "$conda_build_command --output")
         # In some cases (e.g., when patches are present), the output of the `--output` flag 
@@ -191,7 +191,7 @@ runs:
         printf "%s\n" "${host_packages[@]}"
         echo "$conda_build_command"
         eval "$conda_build_command"
-        # Exit if the conda build command fails
+        # Exit if the conda-build command fails
         if [ $? -ne 0 ]; then
           echo "::error::Conda build failed. Please check the logs for more details."
           exit 1
